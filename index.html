@@ -1,1 +1,465 @@
-s
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title Introduction to ICT</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f9ff; /* Tailwind's sky-50 */
+            color: #1f2937; /* Tailwind's gray-800 */
+        }
+        .header {
+            background: linear-gradient(to right, #06b6d4, #22d3ee); /* Cyan-600 to Cyan-400 */
+            color: white;
+        }
+        .question-card {
+            background-color: #ffffff;
+            transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+            border: 1px solid #e0f2f2; /* Cyan-100 */
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        }
+        .question-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+        }
+        .solution-content {
+            display: none;
+            border-top: 1px solid #e2e8f0; /* Slate-200 */
+            padding-top: 1rem;
+            margin-top: 1rem;
+        }
+        .solution-content.show {
+            display: block;
+        }
+        .filter-btn {
+            background-color: #ffffff;
+            color: #06b6d4; /* Cyan-600 */
+            border: 1px solid #06b6d4;
+            transition: background-color 0.2s, color 0.2s, border-color 0.2s;
+        }
+        .filter-btn:hover {
+            background-color: #e0f2f7; /* Cyan-50 */
+        }
+        .filter-btn.active {
+            background-color: #06b6d4; /* Cyan-600 */
+            color: white;
+            font-weight: 600;
+        }
+        .toggle-solution-btn {
+            background-color: #f97316; /* Orange-500 */
+        }
+        .toggle-solution-btn:hover {
+            background-color: #ea580c; /* Orange-600 */
+        }
+        .question-type-select {
+            border-color: #06b6d4; /* Cyan-600 */
+            color: #06b6d4;
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none'%3e%3cpath d='M7 7l3-3 3 3m0 6l-3 3-3-3' stroke='%2306B6D4' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3e%3c/svg%3e"); /* Custom arrow */
+            background-repeat: no-repeat;
+            background-position: right 0.75rem center;
+            background-size: 1.5em 1.5em;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+        }
+        .question-type-select option {
+            color: #1f2937;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+            max-height: 40vh;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 350px;
+            }
+        }
+        .mcq-option {
+            @apply flex items-center p-3 mb-2 border border-gray-200 rounded-lg cursor-pointer transition-all duration-200 ease-in-out;
+        }
+        .mcq-option:hover {
+            @apply bg-orange-50 border-orange-200;
+        }
+        .mcq-option input[type="radio"] {
+            @apply mr-3 h-4 w-4 text-orange-500 focus:ring-orange-500 border-gray-300;
+        }
+        .mcq-option.correct {
+            @apply bg-green-100 border-green-400;
+        }
+        .mcq-option.incorrect {
+            @apply bg-red-100 border-red-400;
+        }
+        .essay-answer-box {
+            @apply w-full p-3 border border-gray-300 rounded-md focus:ring-orange-500 focus:border-orange-500;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container mx-auto px-4 py-8">
+        
+        <header class="header text-center py-8 rounded-xl shadow-lg mb-12">
+            <h1 class="text-5xl font-bold tracking-tight">Introduction to ICT</h1>
+            <p class="text-xl mt-3 opacity-90">Your Gateway to Information and Communication Technology</p>
+            <p class="text-lg mt-4 font-semibold text-cyan-100">Developed by <span class="text-white drop-shadow-md">Sir Hicks bozon404</span></p>
+        </header>
+
+        <section id="dashboard" class="mb-12 bg-white p-8 rounded-xl shadow-lg">
+            <h2 class="text-3xl font-bold text-center mb-6 text-gray-800">Learning Path Overview</h2>
+            <p class="text-center text-gray-600 mb-8 max-w-3xl mx-auto">
+                Discover the breadth of topics covered in this quiz. The chart below illustrates the distribution of questions across core areas of Information and Communication Technology, helping you prioritize your study.
+            </p>
+            <div class="chart-container">
+                <canvas id="categoryChart"></canvas>
+            </div>
+        </section>
+
+        <section id="questions-section" class="mb-8">
+            <h2 class="text-3xl font-bold text-center mb-6 text-gray-800">Interactive Practice Questions</h2>
+            <p class="text-center text-gray-600 mb-8 max-w-3xl mx-auto">
+                Engage with a diverse set of questions to solidify your understanding. Filter by topic or question type, attempt your answer, and then reveal the detailed solution to enhance your learning.
+            </p>
+
+            <div class="flex flex-wrap justify-center items-center gap-4 mb-10">
+                <div id="filters" class="flex flex-wrap justify-center gap-2 md:gap-4">
+                    <button class="filter-btn active px-5 py-2 rounded-full shadow-sm text-sm md:text-base" data-filter="all">All (<span id="allCount"></span>)</button>
+                    <button class="filter-btn px-5 py-2 rounded-full shadow-sm text-sm md:text-base" data-filter="fundamentals">Fundamentals (<span id="fundamentalsCount"></span>)</button>
+                    <button class="filter-btn px-5 py-2 rounded-full shadow-sm text-sm md:text-base" data-filter="hardware">Hardware (<span id="hardwareCount"></span>)</button>
+                    <button class="filter-btn px-5 py-2 rounded-full shadow-sm text-sm md:text-base" data-filter="software">Software (<span id="softwareCount"></span>)</button>
+                    <button class="filter-btn px-5 py-2 rounded-full shadow-sm text-sm md:text-base" data-filter="networking">Networking & Internet (<span id="networkingCount"></span>)</button>
+                    <button class="filter-btn px-5 py-2 rounded-full shadow-sm text-sm md:text-base" data-filter="data">Data & Information (<span id="dataCount"></span>)</button>
+                    <button class="filter-btn px-5 py-2 rounded-full shadow-sm text-sm md:text-base" data-filter="applications">Applications & Society (<span id="applicationsCount"></span>)</button>
+                </div>
+                <div class="ml-0 md:ml-4 mt-4 md:mt-0">
+                    <select id="questionTypeFilter" class="question-type-select px-5 py-2 rounded-full shadow-sm text-sm md:text-base">
+                        <option value="all">All Types</option>
+                        <option value="mcq">Multiple Choice</option>
+                        <option value="essay">Essay</option>
+                    </select>
+                </div>
+            </div>
+
+            <div id="questions-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            </div>
+        </section>
+
+    </div>
+
+    <template id="question-card-template">
+        <div class="question-card p-8 rounded-xl flex flex-col">
+            <h3 class="text-xl font-bold mb-3 text-cyan-700">Question <span class="question-id"></span> (<span class="question-type-display"></span>)</h3>
+            <p class="question-text flex-grow mb-6 text-gray-700 leading-relaxed"></p>
+            <div class="mcq-options-container mb-6"></div>
+            <textarea class="essay-answer-box hidden mb-6" rows="8" placeholder="Type your answer here..."></textarea>
+            
+            <button class="toggle-solution-btn mt-auto w-full text-center px-6 py-3 text-white font-semibold rounded-lg shadow-md transition-all duration-200 ease-in-out">Show Solution</button>
+            <div class="solution-content mt-6"></div>
+        </div>
+    </template>
+    
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+
+    const questionsData = [
+        // Fundamentals of ICT (10 questions)
+        { id: 1, type: 'mcq', category: 'fundamentals', text: 'What does ICT stand for?', options: ['Information Computer Technology', 'Information and Communication Technology', 'Integrated Computing Tools', 'Internet Communication Techniques'], answer: 'Information and Communication Technology', explanation: 'ICT is an acronym for Information and Communication Technology, encompassing all technologies used to handle and transmit information.' },
+        { id: 2, type: 'mcq', category: 'fundamentals', text: 'Which of the following is considered a core component of ICT?', options: ['Agriculture', 'Healthcare', 'Telecommunications', 'Construction'], answer: 'Telecommunications', explanation: 'Telecommunications, along with computing hardware and software, are core components of ICT.' },
+        { id: 3, type: 'essay', category: 'fundamentals', text: 'Explain the broad importance of ICT in modern society.', solution: 'ICT is crucial in modern society because it facilitates rapid communication, global information access, and automation across various sectors. It drives economic growth by enabling e-commerce and innovation, transforms education through e-learning, improves healthcare via telemedicine, and enhances governance through e-government services. It connects people globally, fosters collaboration, and is essential for problem-solving and decision-making in a data-rich world.' },
+        { id: 4, type: 'mcq', category: 'fundamentals', text: 'Which term refers to the ability of different types of ICT devices or systems to work together?', options: ['Compatibility', 'Interoperability', 'Efficiency', 'Scalability'], answer: 'Interoperability', explanation: 'Interoperability is the ability of different information technology systems or software applications to communicate, exchange data, and use the information that has been exchanged.' },
+        { id: 5, type: 'mcq', category: 'fundamentals', text: 'What is the primary difference between "data" and "information"?', options: ['Data is processed, information is raw', 'Data is raw facts, information is processed data', 'They are interchangeable terms', 'Data is qualitative, information is quantitative'], answer: 'Data is raw facts, information is processed data', explanation: 'Data refers to raw, unorganized facts and figures. Information is data that has been processed, organized, structured, or presented in a given context so as to make it useful.' },
+        { id: 6, type: 'essay', category: 'fundamentals', text: 'Discuss the role of ICT in education.', solution: 'ICT plays a transformative role in education by enabling e-learning platforms, providing access to vast online resources, and facilitating interactive learning experiences. It supports blended learning models, allows for personalized learning paths, and helps in administrative tasks. ICT tools like smartboards, educational software, and online collaboration platforms enhance engagement and make learning more accessible and efficient for students and educators alike.' },
+        { id: 7, type: 'mcq', category: 'fundamentals', text: 'Which of these is an example of an input device?', options: ['Monitor', 'Printer', 'Keyboard', 'Speaker'], answer: 'Keyboard', explanation: 'A keyboard is an input device used to enter data and commands into a computer.' },
+        { id: 8, type: 'mcq', category: 'fundamentals', text: 'What is the function of an output device?', options: ['To receive data from the user', 'To process data', 'To display or present processed data to the user', 'To store data permanently'], answer: 'To display or present processed data to the user', explanation: 'Output devices convert electronic information into a human-readable form, such as text, images, or sound.' },
+        { id: 9, type: 'mcq', category: 'fundamentals', text: 'Which term describes the physical components of a computer system?', options: ['Software', 'Hardware', 'Firmware', 'Malware'], answer: 'Hardware', explanation: 'Hardware refers to the tangible, physical components of a computer system, such as the CPU, memory, and peripherals.' },
+        { id: 10, type: 'essay', category: 'fundamentals', text: 'Describe the basic components of a computer system and their general roles.', solution: 'A basic computer system consists of several key components:\n1.  **Central Processing Unit (CPU):** The "brain" of the computer, responsible for executing instructions, performing calculations, and managing the overall flow of data.\n2.  **Memory (RAM):** Short-term storage that the CPU uses to hold data and instructions that are currently being processed. It\'s volatile, meaning data is lost when power is off.\n3.  **Storage Devices:** Long-term storage for data and programs (e.g., Hard Disk Drives (HDDs), Solid State Drives (SSDs), USB drives). They retain data even when power is off.\n4.  **Input Devices:** Allow users to send data and commands to the computer (e.g., keyboard, mouse, microphone).\n5.  **Output Devices:** Present processed information from the computer to the user (e.g., monitor, printer, speakers).\n6.  **Motherboard:** The main circuit board that connects all the components and allows them to communicate with each other.' },
+
+        // Computer Hardware (10 questions)
+        { id: 11, type: 'mcq', category: 'hardware', text: 'Which component is responsible for executing instructions and performing calculations?', options: ['RAM', 'Hard Drive', 'CPU', 'GPU'], answer: 'CPU', explanation: 'The Central Processing Unit (CPU) is the primary component that performs most of the processing inside a computer.' },
+        { id: 12, type: 'mcq', category: 'hardware', text: 'What type of memory is volatile and loses its contents when the computer is turned off?', options: ['ROM', 'Hard Disk', 'RAM', 'SSD'], answer: 'RAM', explanation: 'Random Access Memory (RAM) is volatile memory, meaning it requires power to maintain the stored information.' },
+        { id: 13, type: 'essay', category: 'hardware', text: 'Differentiate between RAM and ROM in terms of their function and characteristics.', solution: '**RAM (Random Access Memory):**\n* **Function:** Primary memory used for temporary storage of data and programs currently being used by the CPU. It allows for very fast read/write operations.\n* **Characteristics:** Volatile (contents are lost when power is off); read/write memory.\n\n**ROM (Read-Only Memory):**\n* **Function:** Non-volatile memory that stores firmware (like BIOS) that is essential for the computer\'s startup process. Its contents are typically set during manufacturing.\n* **Characteristics:** Non-volatile (contents persist even when power is off); primarily read-only (though some types like EEPROM can be reprogrammed slowly).' },
+        { id: 14, type: 'mcq', category: 'hardware', text: 'Which of these is a non-volatile storage device?', options: ['RAM', 'Cache Memory', 'Solid State Drive (SSD)', 'CPU Registers'], answer: 'Solid State Drive (SSD)', explanation: 'SSDs use flash memory to store data, which retains information even without power, making them non-volatile.' },
+        { id: 15, type: 'mcq', category: 'hardware', text: 'The "motherboard" is:', options: ['A type of software', 'The main circuit board of a computer', 'A storage device', 'An input device'], answer: 'The main circuit board of a computer', explanation: 'The motherboard is the central printed circuit board that holds and allows communication between many of the crucial electronic components of a computer system.' },
+        { id: 16, type: 'essay', category: 'hardware', text: 'Describe the function of input and output devices and provide two examples for each.', solution: '**Input Devices:** These are hardware components that allow users to send data, commands, or signals into a computer system. They convert human-readable input into a format the computer can understand.\n* **Examples:**\n    1.  **Keyboard:** Used for typing text and commands.\n    2.  **Mouse:** Used for navigating the graphical user interface and selecting items.\n\n**Output Devices:** These are hardware components that receive processed data from the computer and present it in a human-readable or usable form. They convert computer-generated signals into visual, auditory, or tactile output.\n* **Examples:**\n    1.  **Monitor/Display:** Shows visual output (text, images, video).\n    2.  **Printer:** Produces hard copies of digital documents.' },
+        { id: 17, type: 'mcq', category: 'hardware', text: 'Which port is commonly used for connecting display devices like monitors?', options: ['USB', 'Ethernet', 'HDMI', 'PS/2'], answer: 'HDMI', explanation: 'HDMI (High-Definition Multimedia Interface) is a widely used port for transmitting high-quality video and audio signals to displays.' },
+        { id: 18, type: 'mcq', category: 'hardware', text: 'What is the primary advantage of an SSD over an HDD?', options: ['Lower cost per GB', 'Higher storage capacity', 'Faster data access speeds', 'More durable to physical shock'], answer: 'Faster data access speeds', explanation: 'SSDs have no moving parts, allowing for significantly faster boot times, application loading, and file transfers compared to traditional HDDs.' },
+        { id: 19, type: 'mcq', category: 'hardware', text: 'The component that converts AC power from the wall outlet to DC power for computer components is the:', options: ['Motherboard', 'CPU', 'Power Supply Unit (PSU)', 'GPU'], answer: 'Power Supply Unit (PSU)', explanation: 'The PSU is responsible for supplying stable DC power to all internal components of the computer.' },
+        { id: 20, type: 'essay', category: 'hardware', text: 'Explain the role of the Central Processing Unit (CPU) and list its two main parts.', solution: 'The **Central Processing Unit (CPU)** is often referred to as the "brain" of the computer. Its primary role is to interpret and execute instructions from computer programs, perform arithmetic and logical operations, and manage the overall flow of data within the computer system. It handles most of the data processing.\n\nIts two main parts are:\n1.  **Arithmetic Logic Unit (ALU):** Performs arithmetic operations (addition, subtraction, etc.) and logical operations (AND, OR, NOT).\n2.  **Control Unit (CU):** Directs and coordinates most of the operations in the computer. It fetches instructions from memory, decodes them, and executes them by sending control signals to other components.' },
+
+        // Computer Software (10 questions)
+        { id: 21, type: 'mcq', category: 'software', text: 'Which type of software manages computer hardware and software resources, and provides common services for computer programs?', options: ['Application Software', 'Utility Software', 'System Software', 'Malware'], answer: 'System Software', explanation: 'System software, such as operating systems and device drivers, manages and controls the computer hardware and provides a platform for application software.' },
+        { id: 22, type: 'mcq', category: 'software', text: 'Microsoft Word is an example of what type of software?', options: ['System Software', 'Utility Software', 'Application Software', 'Operating System'], answer: 'Application Software', explanation: 'Application software is designed to perform specific tasks for the user, such as word processing, spreadsheets, or web browsing.' },
+        { id: 23, type: 'essay', category: 'software', text: 'Differentiate between System Software and Application Software, providing examples for each.', solution: '**System Software:**\n* **Purpose:** Designed to manage and control the computer hardware and to provide a platform for running application software. It acts as an interface between the hardware and the user/applications.\n* **Examples:** Operating Systems (Windows, macOS, Linux), Device Drivers, Utility Programs (antivirus, disk defragmenter).\n\n**Application Software:**\n* **Purpose:** Designed to perform specific tasks for the end-user. It helps users accomplish particular activities.\n* **Examples:** Word Processors (Microsoft Word, Google Docs), Web Browsers (Chrome, Firefox), Photo Editors (Adobe Photoshop), Video Games.' },
+        { id: 24, type: 'mcq', category: 'software', text: 'What is the role of a "device driver"?', options: ['To install new applications', 'To allow the operating system to communicate with hardware devices', 'To manage network connections', 'To create backup files'], answer: 'To allow the operating system to communicate with hardware devices', explanation: 'A device driver is a program that operates or controls a particular type of device that is attached to a computer.' },
+        { id: 25, type: 'mcq', category: 'software', text: 'Which of these is an open-source operating system?', options: ['Microsoft Windows', 'macOS', 'iOS', 'Linux'], answer: 'Linux', explanation: 'Linux is a prominent example of open-source software, meaning its source code is freely available and can be modified by anyone.' },
+        { id: 26, type: 'essay', category: 'software', text: 'Explain the concept of "Operating System" as a type of system software and list three of its core functions.', solution: 'An **Operating System (OS)** is the most crucial piece of system software that manages computer hardware and software resources and provides common services for computer programs. It acts as an intermediary between the user/applications and the computer hardware, making the system convenient and efficient to use.\n\nThree core functions of an OS are:\n1.  **Process Management:** Managing the execution of programs (processes), including creation, termination, scheduling, and synchronization.\n2.  **Memory Management:** Allocating and deallocating memory space to programs, ensuring efficient use of RAM and preventing conflicts.\n3.  **File Management:** Organizing, storing, retrieving, and protecting files and directories on storage devices.' },
+        { id: 27, type: 'mcq', category: 'software', text: 'Software that is distributed free of charge but typically requires payment for advanced features or support is known as:', options: ['Freeware', 'Shareware', 'Open Source', 'Proprietary Software'], answer: 'Shareware', explanation: 'Shareware is copyrighted software that is distributed free of charge for a trial period, after which the user is supposed to pay for it or uninstall it.' },
+        { id: 28, type: 'mcq', category: 'software', text: 'What is the purpose of a "compiler"?', options: ['To execute a program directly', 'To translate high-level programming code into machine code', 'To manage network traffic', 'To display web pages'], answer: 'To translate high-level programming code into machine code', explanation: 'A compiler is a special program that translates a programming language\'s source code into machine code, bytecode, or another programming language.' },
+        { id: 29, type: 'mcq', category: 'software', text: 'Which of the following is a utility program?', options: ['Microsoft Excel', 'Adobe Photoshop', 'Antivirus Software', 'Google Chrome'], answer: 'Antivirus Software', explanation: 'Utility software helps to analyze, configure, optimize or maintain a computer. Antivirus software is a classic example.' },
+        { id: 30, type: 'essay', category: 'software', text: 'Discuss the concept of "firmware" and provide an example of where it is used.', solution: '**Firmware** is a specific class of computer software that provides low-level control for a device\'s specific hardware. It is typically stored in non-volatile memory (like ROM, EPROM, or flash memory) within the hardware device itself. Unlike general-purpose software, firmware is usually tightly integrated with the hardware it controls and is rarely updated by the end-user.\n\n**Example:** The **BIOS (Basic Input/Output System)** found on a computer\'s motherboard is a common example of firmware. It contains the instructions needed to start up the computer, perform a Power-On Self-Test (POST), and load the operating system from a storage device. Other examples include the software embedded in routers, smart TVs, and IoT devices.' },
+
+        // Networking & Internet (10 questions)
+        { id: 31, type: 'mcq', category: 'networking', text: 'What does LAN stand for?', options: ['Local Area Network', 'Large Access Network', 'Limited Area Node', 'Logical Access Link'], answer: 'Local Area Network', explanation: 'LAN refers to a computer network that interconnects computers within a limited area such as a residence, school, laboratory, university campus, or office building.' },
+        { id: 32, type: 'mcq', category: 'networking', text: 'Which device is used to connect multiple computers in a local area network and forward data packets to their intended destinations?', options: ['Modem', 'Router', 'Switch', 'Repeater'], answer: 'Switch', explanation: 'A switch connects devices in a network and forwards data frames to specific devices based on their MAC addresses.' },
+        { id: 33, type: 'essay', category: 'networking', text: 'Explain the difference between a LAN and a WAN, providing an example for each.', solution: '**LAN (Local Area Network):**\n* **Scope:** Covers a small geographical area, such as a home, office building, or campus.\n* **Speed:** Typically offers high data transfer rates.\n* **Ownership:** Usually privately owned and managed.\n* **Example:** Computers connected within a single office building sharing files and printers.\n\n**WAN (Wide Area Network):**\n* **Scope:** Spans a large geographical area, often connecting multiple LANs over long distances.\n* **Speed:** Generally slower data transfer rates compared to LANs due to longer distances and public infrastructure.\n* **Ownership:** Often uses public telecommunication lines (like the internet) and may involve third-party service providers.\n* **Example:** The Internet itself is the largest WAN. A company connecting its branch offices across different cities or countries via a private network.' },
+        { id: 34, type: 'mcq', category: 'networking', text: 'What is the primary function of a "router"?', options: ['To translate web pages', 'To connect different networks and route data packets between them', 'To store user files', 'To print documents'], answer: 'To connect different networks and route data packets between them', explanation: 'A router is a networking device that forwards data packets between computer networks. Routers perform the traffic directing functions on the Internet.' },
+        { id: 35, type: 'mcq', category: 'networking', text: 'Which protocol is used for secure communication over a computer network, and is widely used for secure web browsing?', options: ['HTTP', 'FTP', 'SMTP', 'HTTPS'], answer: 'HTTPS', explanation: 'HTTPS (Hypertext Transfer Protocol Secure) is the secure version of HTTP, using SSL/TLS encryption to protect data in transit.' },
+        { id: 36, type: 'essay', category: 'networking', text: 'Describe the concept of "IP Address" and its importance in networking.', solution: 'An **IP Address (Internet Protocol Address)** is a numerical label assigned to each device connected to a computer network that uses the Internet Protocol for communication. It serves two main functions:\n1.  **Host or Network Interface Identification:** It uniquely identifies a device on a network.\n2.  **Location Addressing:** It provides the location of the device on the network, allowing data packets to be routed to the correct destination.\n\n**Importance:** Without IP addresses, devices on a network (including the internet) would not be able to find and communicate with each other. It\'s analogous to a postal address for sending mail; each packet needs a destination IP address to know where to go and a source IP address to know where it came from.' },
+        { id: 37, type: 'mcq', category: 'networking', text: 'What does Wi-Fi stand for?', options: ['Wireless Fidelity', 'Wired Fiber', 'Web Interface', 'Wireless Fast Internet'], answer: 'Wireless Fidelity', explanation: 'Wi-Fi is a family of wireless networking technologies based on the IEEE 802.11 standards, commonly used for local area networking of devices and internet access.' },
+        { id: 38, type: 'mcq', category: 'networking', text: 'Which of these is a common type of internet service provider (ISP) connection?', options: ['Bluetooth', 'Dial-up', 'USB', 'Infrared'], answer: 'Dial-up', explanation: 'While outdated, dial-up was a common method to connect to the internet via a telephone line. Other modern options include DSL, Cable, Fiber, and Satellite.' },
+        { id: 39, type: 'mcq', category: 'networking', text: 'What is a "firewall" in network security?', options: ['A type of network cable', 'A software or hardware-based network security system that controls incoming and outgoing network traffic', 'A device that amplifies network signals', 'A program that scans for viruses'], answer: 'A software or hardware-based network security system that controls incoming and outgoing network traffic', explanation: 'A firewall establishes a barrier between a trusted internal network and untrusted external networks, controlling access based on security rules.' },
+        { id: 40, type: 'essay', category: 'networking', text: 'Describe the World Wide Web (WWW) and its relationship with the Internet.', solution: 'The **World Wide Web (WWW)**, often simply called "the Web," is a global system of interconnected computer networks that uses the Internet\'s standard communication protocols. It is a system of interlinked hypertext documents and other web resources that are accessed via the Internet.\n\n**Relationship with the Internet:** The Internet is the vast global network infrastructure (the physical cables, routers, servers, etc.) that allows computers to connect and exchange data. The Web, on the other hand, is a specific *service* that runs on top of the Internet. Think of the Internet as the roads and highways, and the Web as one type of traffic (like cars) that uses those roads to deliver information (like goods). Other services that use the Internet include email, file transfer (FTP), and online gaming.' },
+
+        // Data & Information (10 questions)
+        { id: 41, type: 'mcq', category: 'data', text: 'What is the smallest unit of data in a computer?', options: ['Byte', 'Kilobyte', 'Bit', 'Megabyte'], answer: 'Bit', explanation: 'A bit (binary digit) is the smallest unit of data in a computer, representing either a 0 or a 1.' },
+        { id: 42, type: 'mcq', category: 'data', text: 'How many bits are in a byte?', options: ['4', '8', '16', '32'], answer: '8', explanation: 'A byte is a unit of digital information that most commonly consists of eight bits.' },
+        { id: 43, type: 'essay', category: 'data', text: 'Explain the concept of a "database" and its advantages.', solution: 'A **database** is an organized collection of structured information, or data, typically stored electronically in a computer system. It is designed to efficiently store, retrieve, manage, and update data. Databases are typically managed by a Database Management System (DBMS).\n\n**Advantages of Databases:**\n1.  **Reduced Data Redundancy:** Minimizes duplicate data, saving storage space and preventing inconsistencies.\n2.  **Improved Data Consistency:** Ensures that data is accurate and reliable across the system.\n3.  **Enhanced Data Security:** Provides mechanisms for access control and data protection.\n4.  **Better Data Sharing:** Allows multiple users and applications to access and share the same data concurrently.\n5.  **Data Independence:** Changes to data storage structure do not necessarily affect applications that use the data.\n6.  **Faster Data Retrieval:** Optimized for quick searching and querying of information.' },
+        { id: 44, type: 'mcq', category: 'data', text: 'Which data representation uses only 0s and 1s?', options: ['Decimal', 'Hexadecimal', 'Binary', 'Octal'], answer: 'Binary', explanation: 'Binary is a base-2 number system that uses only two symbols: 0 and 1. It is the fundamental language of computers.' },
+        { id: 45, type: 'mcq', category: 'data', text: 'What is "data integrity"?', options: ['The speed of data transfer', 'The accuracy and consistency of data over its entire life cycle', 'The encryption of data', 'The amount of data stored'], answer: 'The accuracy and consistency of data over its entire life cycle', explanation: 'Data integrity refers to maintaining and assuring the accuracy and consistency of data over its entire life-cycle.' },
+        { id: 46, type: 'essay', category: 'data', text: 'Describe the difference between primary key and foreign key in a relational database.', solution: 'In a relational database:\n\n**Primary Key:**\n* **Definition:** A column or a set of columns in a table that uniquely identifies each row (or record) in that table. It must contain unique values for each row, and it cannot contain NULL values.\n* **Purpose:** Ensures data integrity by guaranteeing that each record is distinct and can be uniquely referenced. It is used to establish relationships with other tables.\n* **Example:** In a `Students` table, `StudentID` would typically be the primary key.\n\n**Foreign Key:**\n* **Definition:** A column or a set of columns in one table that refers to the primary key in another table. It establishes a link or relationship between two tables.\n* **Purpose:** Ensures referential integrity, meaning that relationships between tables are maintained. It prevents actions that would destroy links between tables (e.g., deleting a record in the primary table if it\'s referenced by a foreign key in another table).\n* **Example:** In a `Courses` table, `StudentID` (if it refers to the `StudentID` in the `Students` table) would be a foreign key, linking a course enrollment to a specific student.' },
+        { id: 47, type: 'mcq', category: 'data', text: 'A collection of related data organized in a way that allows for efficient retrieval and management is called a:', options: ['Spreadsheet', 'Document', 'Database', 'Folder'], answer: 'Database', explanation: 'A database is a structured collection of data, typically stored and accessed electronically from a computer system.' },
+        { id: 48, type: 'mcq', category: 'data', text: 'Which unit is typically used to measure the speed of data transfer over a network?', options: ['Bytes per second (Bps)', 'Bits per second (bps)', 'Hertz (Hz)', 'Gigabytes (GB)'], answer: 'Bits per second (bps)', explanation: 'Network speeds are commonly measured in bits per second (bps), kilobits per second (Kbps), megabits per second (Mbps), etc.' },
+        { id: 49, type: 'mcq', category: 'data', text: 'What is "cloud storage"?', options: ['Storing data on a local hard drive', 'Storing data on remote servers accessed over the internet', 'Storing data on a USB flash drive', 'Storing data on CDs/DVDs'], answer: 'Storing data on remote servers accessed over the internet', explanation: 'Cloud storage is a model of computer data storage in which the digital data is stored in logical pools, said to be on "the cloud".' },
+        { id: 50, type: 'essay', category: 'data', text: 'Discuss the importance of data backup and recovery strategies.', solution: 'Data backup and recovery strategies are critically important for several reasons:\n1.  **Data Loss Prevention:** Protects against accidental deletion, hardware failure, software corruption, natural disasters, and cyberattacks (like ransomware).\n2.  **Business Continuity:** Ensures that critical operations can quickly resume after a data loss incident, minimizing downtime and financial impact.\n3.  **Compliance:** Many regulations (e.g., GDPR, HIPAA) require organizations to have robust data backup and recovery plans to protect sensitive information.\n4.  **Disaster Recovery:** Enables the restoration of data and systems in the event of a major disaster, ensuring resilience.\n\n**Strategy:** A good strategy involves regularly creating copies of data (backups) and storing them securely, often off-site or in the cloud. It also includes having a tested plan for restoring that data (recovery) to ensure it is usable when needed.' },
+
+        // ICT Applications & Society (10 questions)
+        { id: 51, type: 'mcq', category: 'applications', text: 'Which ICT application is primarily used for managing customer interactions and data?', options: ['ERP', 'CRM', 'SCM', 'HRM'], answer: 'CRM', explanation: 'CRM stands for Customer Relationship Management, a system designed to manage and analyze customer interactions and data throughout the customer lifecycle.' },
+        { id: 52, type: 'mcq', category: 'applications', text: 'What is "e-commerce"?', options: ['Electronic mail', 'Online shopping and business transactions', 'Electronic government services', 'Online education'], answer: 'Online shopping and business transactions', explanation: 'E-commerce refers to the buying and selling of goods or services using the internet, and the transfer of money and data to execute these transactions.' },
+        { id: 53, type: 'essay', category: 'applications', text: 'Discuss the ethical implications of data privacy in the age of ICT.', solution: 'The widespread use of ICT has brought significant ethical implications regarding data privacy. Organizations collect vast amounts of personal data, raising concerns about how this data is stored, used, and shared. Key issues include:\n1.  **Surveillance:** The potential for governments and corporations to monitor individuals\' online activities.\n2.  **Profiling:** Using data to create detailed profiles of individuals, which can lead to discrimination or targeted manipulation.\n3.  **Data Breaches:** The risk of sensitive personal information being stolen or exposed.\n4.  **Consent and Transparency:** Ensuring individuals are aware of what data is being collected and how it will be used, and giving them meaningful control over it.\n5.  **Right to be Forgotten:** The debate over an individual\'s right to have their personal data removed from public access.\nThese concerns necessitate robust data protection laws (like GDPR) and ethical practices by organizations to build trust and protect individual rights.' },
+        { id: 54, type: 'mcq', category: 'applications', text: 'Which ICT application helps organizations manage their core business processes, such as finance, HR, and manufacturing?', options: ['CRM', 'ERP', 'CAD', 'GIS'], answer: 'ERP', explanation: 'ERP (Enterprise Resource Planning) software integrates various functions of a business into a single system.' },
+        { id: 55, type: 'mcq', category: 'applications', text: 'What is "telecommuting" or "teleworking"?', options: ['Using a telephone for communication', 'Working remotely using ICT to connect to the office', 'Sending faxes electronically', 'Broadcasting television signals'], answer: 'Working remotely using ICT to connect to the office', explanation: 'Telecommuting involves working from a remote location, often a home office, using telecommunications technology to stay connected to the workplace.' },
+        { id: 56, type: 'essay', category: 'applications', text: 'Describe the concept of "Digital Divide" and its societal impact.', solution: 'The **Digital Divide** refers to the gap between individuals, households, businesses, and geographic areas at different socio-economic levels with regard to both their access to information and communication technologies (ICTs) and their use of the Internet for a wide variety of activities. It\'s not just about access to devices or internet, but also about the quality of access, affordability, digital literacy, and relevant content.\n\n**Societal Impact:**\n* **Exacerbates Inequalities:** Those without access or skills are disadvantaged in education, employment, healthcare, and civic participation.\n* **Economic Disparity:** Limits opportunities for economic growth and innovation in underserved communities.\n* **Reduced Social Mobility:** Hinders access to information and resources that can improve quality of life and social standing.\n* **Exclusion from Services:** Many essential services (government, banking, healthcare) are increasingly moving online, potentially excluding those on the wrong side of the divide.\nAddressing the digital divide is crucial for equitable development and inclusive societies.' },
+        { id: 57, type: 'mcq', category: 'applications', text: 'Which ICT application is used to create, edit, and manage documents?', options: ['Spreadsheet software', 'Presentation software', 'Word processing software', 'Database software'], answer: 'Word processing software', explanation: 'Word processing software, like Microsoft Word or Google Docs, is specifically designed for creating and manipulating text-based documents.' },
+        { id: 58, type: 'mcq', category: 'applications', text: 'What is "cybersecurity"?', options: ['Physical security of computer hardware', 'Protection of computer systems and networks from digital attacks', 'The process of building computer networks', 'The study of computer programming languages'], answer: 'Protection of computer systems and networks from digital attacks', explanation: 'Cybersecurity involves the practices, technologies, and processes designed to protect networks, devices, programs, and data from attack, damage, or unauthorized access.' },
+        { id: 59, type: 'mcq', category: 'applications', text: 'The use of ICT to deliver government services and information to citizens is called:', options: ['E-commerce', 'E-learning', 'E-government', 'E-health'], answer: 'E-government', explanation: 'E-government refers to the use of information and communication technologies to provide government services, exchange information, communicate transactions, and integrate various stand-alone systems and services.' },
+        { id: 60, type: 'essay', category: 'applications', text: 'Discuss the potential negative impacts of excessive reliance on ICT in daily life.', solution: 'While ICT offers immense benefits, excessive reliance can lead to several negative impacts:\n1.  **Digital Addiction and Mental Health:** Overuse of devices and social media can lead to addiction, anxiety, depression, and reduced attention spans.\n2.  **Social Isolation:** Increased virtual interaction can sometimes replace face-to-face communication, leading to feelings of loneliness.\n3.  **Privacy Concerns:** Constant data collection and sharing raise significant privacy risks, including surveillance and data breaches.\n4.  **Cybercrime and Security Risks:** Greater connectivity means increased exposure to malware, phishing, identity theft, and other cyber threats.\n5.  **Job Displacement:** Automation driven by ICT can lead to job losses in certain sectors.\n6.  **Information Overload and Misinformation:** The sheer volume of information can be overwhelming, and the spread of fake news can have serious consequences.\n7.  **Physical Health Issues:** Sedentary lifestyles, eye strain, and repetitive strain injuries are common with prolonged computer use.' }
+    ];
+
+    const questionsGrid = document.getElementById('questions-grid');
+    const template = document.getElementById('question-card-template');
+    const filterButtons = document.querySelectorAll('#filters .filter-btn');
+    const questionTypeFilter = document.getElementById('questionTypeFilter');
+
+    // Update counts
+    const updateCounts = () => {
+        const counts = {
+            all: questionsData.length,
+            fundamentals: questionsData.filter(q => q.category === 'fundamentals').length,
+            hardware: questionsData.filter(q => q.category === 'hardware').length,
+            software: questionsData.filter(q => q.category === 'software').length,
+            networking: questionsData.filter(q => q.category === 'networking').length,
+            data: questionsData.filter(q => q.category === 'data').length,
+            applications: questionsData.filter(q => q.category === 'applications').length,
+            mcq: questionsData.filter(q => q.type === 'mcq').length,
+            essay: questionsData.filter(q => q.type === 'essay').length
+        };
+        document.getElementById('allCount').textContent = counts.all;
+        document.getElementById('fundamentalsCount').textContent = counts.fundamentals;
+        document.getElementById('hardwareCount').textContent = counts.hardware;
+        document.getElementById('softwareCount').textContent = counts.software;
+        document.getElementById('networkingCount').textContent = counts.networking;
+        document.getElementById('dataCount').textContent = counts.data;
+        document.getElementById('applicationsCount').textContent = counts.applications;
+    };
+
+    function renderQuestions(categoryFilter = 'all', typeFilter = 'all') {
+        questionsGrid.innerHTML = '';
+        const filteredQuestions = questionsData.filter(q => {
+            const categoryMatch = categoryFilter === 'all' || q.category === categoryFilter;
+            const typeMatch = typeFilter === 'all' || q.type === typeFilter;
+            return categoryMatch && typeMatch;
+        });
+
+        filteredQuestions.forEach(q => {
+            const card = template.content.cloneNode(true);
+            card.querySelector('.question-id').textContent = q.id;
+            card.querySelector('.question-type-display').textContent = q.type.toUpperCase();
+            card.querySelector('.question-text').innerHTML = q.text;
+            
+            const solutionContent = card.querySelector('.solution-content');
+            
+            if (q.type === 'mcq') {
+                const optionsContainer = card.querySelector('.mcq-options-container');
+                optionsContainer.innerHTML = ''; // Clear existing options
+                q.options.forEach((option, index) => {
+                    const optionDiv = document.createElement('label');
+                    optionDiv.className = 'mcq-option';
+                    optionDiv.innerHTML = `
+                        <input type="radio" name="question-${q.id}" value="${option}">
+                        <span>${option}</span>
+                    `;
+                    // Event listener for MCQ option selection
+                    optionDiv.addEventListener('click', () => {
+                        // Clear previous highlights for this question's options
+                        optionsContainer.querySelectorAll('.mcq-option').forEach(opt => {
+                            opt.classList.remove('correct', 'incorrect');
+                        });
+
+                        const selectedOption = optionDiv.querySelector('input').value;
+                        if (selectedOption === q.answer) {
+                            optionDiv.classList.add('correct');
+                        } else {
+                            optionDiv.classList.add('incorrect');
+                            // Highlight the correct answer if an incorrect one is selected
+                            optionsContainer.querySelectorAll('.mcq-option').forEach(opt => {
+                                if (opt.querySelector('input').value === q.answer) {
+                                    opt.classList.add('correct');
+                                }
+                            });
+                        }
+                    });
+                    optionsContainer.appendChild(optionDiv);
+                });
+                card.querySelector('.essay-answer-box').classList.add('hidden');
+                solutionContent.innerHTML = `<p class="mt-4 font-semibold text-cyan-600">Correct Answer: ${q.answer}</p><p class="text-gray-700 mt-2">Explanation: ${q.explanation}</p>`;
+
+            } else if (q.type === 'essay') {
+                card.querySelector('.mcq-options-container').classList.add('hidden');
+                card.querySelector('.essay-answer-box').classList.remove('hidden');
+                solutionContent.innerHTML = `<h4 class="font-semibold text-cyan-600 mb-2">Model Solution:</h4><p class="text-gray-700 whitespace-pre-wrap">${q.solution}</p>`;
+            }
+
+            questionsGrid.appendChild(card);
+        });
+    }
+
+    questionsGrid.addEventListener('click', (e) => {
+        if (e.target.classList.contains('toggle-solution-btn')) {
+            const btn = e.target;
+            const solutionContent = btn.nextElementSibling;
+            const isVisible = solutionContent.classList.toggle('show');
+            btn.textContent = isVisible ? 'Hide Solution' : 'Show Solution';
+        }
+    });
+
+    let currentCategoryFilter = 'all';
+    let currentTypeFilter = 'all';
+
+    filterButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            filterButtons.forEach(btn => btn.classList.remove('active'));
+            button.classList.add('active');
+            currentCategoryFilter = button.dataset.filter;
+            renderQuestions(currentCategoryFilter, currentTypeFilter);
+        });
+    });
+
+    questionTypeFilter.addEventListener('change', (e) => {
+        currentTypeFilter = e.target.value;
+        renderQuestions(currentCategoryFilter, currentTypeFilter);
+    });
+    
+    function setupChart() {
+        const ctx = document.getElementById('categoryChart').getContext('2d');
+        const categoryCounts = questionsData.reduce((acc, q) => {
+            acc[q.category] = (acc[q.category] || 0) + 1;
+            return acc;
+        }, {});
+
+        const labels = {
+            'fundamentals': 'Fundamentals of ICT',
+            'hardware': 'Computer Hardware',
+            'software': 'Computer Software',
+            'networking': 'Networking & Internet',
+            'data': 'Data & Information',
+            'applications': 'ICT Applications & Society'
+        };
+
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: Object.keys(categoryCounts).map(key => labels[key]),
+                datasets: [{
+                    label: '# of Questions',
+                    data: Object.values(categoryCounts),
+                    backgroundColor: [
+                        'rgba(6, 182, 212, 0.7)',  /* Cyan-600 */
+                        'rgba(251, 146, 60, 0.7)', /* Orange-400 */
+                        'rgba(34, 197, 94, 0.7)',  /* Green-500 */
+                        'rgba(168, 85, 247, 0.7)', /* Purple-400 */
+                        'rgba(244, 63, 94, 0.7)',  /* Rose-500 */
+                        'rgba(234, 179, 8, 0.7)'   /* Yellow-500 */
+                    ],
+                    borderColor: [
+                        'rgba(6, 182, 212, 1)',
+                        'rgba(251, 146, 60, 1)',
+                        'rgba(34, 197, 94, 1)',
+                        'rgba(168, 85, 247, 1)',
+                        'rgba(244, 63, 94, 1)',
+                        'rgba(234, 179, 8, 1)'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            stepSize: 1,
+                            color: '#4b5563' 
+                        },
+                        grid: {
+                            color: '#e5e7eb' 
+                        }
+                    },
+                    x: {
+                         ticks: {
+                            color: '#4b5563' 
+                        },
+                        grid: {
+                            display: false
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    title: {
+                        display: true,
+                        text: 'Question Distribution by Topic',
+                        font: {
+                            size: 18,
+                            weight: 'bold'
+                        },
+                        color: '#1f2937' 
+                    },
+                    tooltip: {
+                        backgroundColor: '#1f2937',
+                        titleFont: {
+                            size: 14
+                        },
+                        bodyFont: {
+                            size: 12
+                        },
+                        padding: 10,
+                        cornerRadius: 4
+                    }
+                }
+            }
+        });
+    }
+
+    updateCounts();
+    renderQuestions();
+    setupChart();
+});
+</script>
+
+</body>
+</html>
